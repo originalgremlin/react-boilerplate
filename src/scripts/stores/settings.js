@@ -39,27 +39,9 @@ class Store extends BaseStore {
 
 export default new Store((store, action) => {
     switch (action.type) {
-        case Actions.UPDATE_CHART:
+        case Actions.UPDATE_ONE:
         {
-            let key = `chart/${ action.chart }`,
-                value = JSON.stringify(action.values);
-            data.setItem(key, value);
-            store.emit(key, value);
-            break;
-        }
-
-        case Actions.UPDATE_CURRENT:
-        {
-            let key = 'current',
-                value = action.value;
-            data.setItem(key, value);
-            store.emit(key, value);
-            break;
-        }
-
-        case Actions.UPDATE_FORM:
-        {
-            let key = `form/${ action.form }`,
+            let key = `one/${ action.name }`,
                 value = JSON.stringify(action.values);
             data.setItem(key, value);
             store.emit(key, value);
