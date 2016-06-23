@@ -1,0 +1,17 @@
+@import "compass/css3";
+
+@import "./mixins/colors";
+@import "./mixins/fonts";
+@import "./mixins/variables";
+@import "./mixins/functions";
+
+@import "components/header";
+@import "components/content";
+@import "components/footer";
+
+body {
+    background-color: white;
+    font-size: $mediumText;
+    font-family: "Open Sans", verdana, arial, sans-serif;
+    margin: 0 auto;
+}

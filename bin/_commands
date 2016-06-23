@@ -1,0 +1,41 @@
+source "$( dirname "${BASH_SOURCE[0]}" )/_constants"
+source "$( dirname "${BASH_SOURCE[0]}" )/_funcs"
+
+browserify() {
+    local cmd=$FUNCNAME
+    local err="${LOG_DIR}/${cmd}.err"
+    local out="${LOG_DIR}/${cmd}.out"
+    case "${ENVIRONMENT}" in
+        dev)
+            daemon $FUNCNAME "${BIN_DIR}/watchify ${SRC_DIR}/scripts/app.js --extension=.js -t [ babelify --presets [ es2015 react ] ] -d -o ${BUILD_DIR}/dev/app.js -v"
+        ;;
+
+        prod)
+            NODE_ENV=production "${BIN_DIR}/browserify" "${SRC_DIR}/scripts/app.js" --extension=.js -t [ babelify --presets [ es2015 react ] ] | "${BIN_DIR}/uglifyjs" -c sequences,properties,dead_code,drop_debugger,unsafe,conditionals,comparisons,evaluate,booleans,loops,unused,if_return,join_vars,cascade,collapse_vars,warnings,negate_iife,drop_console,keep_fargs=false,keep_fnames=false -m --screw-ie8 -o "${BUILD_DIR}/prod/app.js" -v >>"${out}" 2>>"${err}"
+        ;;
+    esac
+}
+
+http_server() {
+    [ -a "${SSL_DIR}/localhost.key" ] || openssl req -days 3650 -nodes -new -x509 -keyout "${SSL_DIR}/localhost.key" -out "${SSL_DIR}/localhost.crt" -subj '/CN=localhost/' >/dev/null 2>&1
+    daemon $FUNCNAME "${BIN_DIR}/http-server" "${BUILD_DIR}" -a localhost -d --cors -i -p "${HTTP_SERVER_PORT}" -S -K "${SSL_DIR}/localhost.key" -C "${SSL_DIR}/localhost.crt"
+}
+
+sass() {
+    case "${ENVIRONMENT}" in
+        dev)
+            local in="${SRC_DIR}/styles/app.scss"
+            local out="${BUILD_DIR}/dev/app.css"
+            daemon $FUNCNAME compass watch ${in} --sass-dir "${SRC_DIR}/styles" --css-dir "${BUILD_DIR}/dev" --images-dir "${ASSETS_DIR}/images" --javascripts-dir "${SRC_DIR}/scripts" --fonts-dir "${ASSETS_DIR}/fonts" --environment development --output-style expanded --no-debug-info --no-line-comments --no-sourcemap --time --force
+            while [ ! -e "${out}" ]; do
+                touch "${in}"
+                sleep 1
+            done;
+        ;;
+
+        prod)
+            local in="${SRC_DIR}/styles/app.scss"
+            no_daemon $FUNCNAME compass compile ${in} --sass-dir "${SRC_DIR}/styles" --css-dir "${BUILD_DIR}/prod" --images-dir "${ASSETS_DIR}/images" --javascripts-dir "${SRC_DIR}/scripts" --fonts-dir "${ASSETS_DIR}/fonts" --environment production --output-style compressed --no-debug-info --no-line-comments --no-sourcemap --time --force
+        ;;
+    esac
+}

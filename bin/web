@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -e
+source "$( dirname "${BASH_SOURCE[0]}" )/_commands"
+
+pushd "${DIR}" &>/dev/null
+case "$1" in
+    start|stop|restart|status)
+        $1 sass browserify http_server
+    ;;
+
+    test)
+        echo "Testing web..."
+        BABEL_ENV=test NODE_ROOT="${DIR}" echo "TODO install mocha, istanbul, write mocha.opts, run tests"
+        echo "${COLOR_GREEN}done!${COLOR_NONE}"
+    ;;
+
+    build)
+        echo "Building web..."
+        start sass browserify http_server
+        echo "${COLOR_GREEN}done!${COLOR_NONE}"
+    ;;
+
+    deploy)
+        echo "Deploying web..."
+        echo "TODO..."
+        echo "${COLOR_GREEN}done!${COLOR_NONE}"
+    ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status|test|build|deploy} [commands: ${COMMANDS}]"
+        exit 1
+    ;;
+esac
+popd >/dev/null

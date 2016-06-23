@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -e
+source "$( dirname "${BASH_SOURCE[0]}" )/_aliases"
+source "$( dirname "${BASH_SOURCE[0]}" )/_commands"
+
+PLATFORMS="web"
+
+pushd "${DIR}" &>/dev/null
+case "$1" in
+    clean)
+        exec 1>>"${LOG_FILE}.out"
+        exec 2>>"${LOG_FILE}.err"
+        rm -rfv "${BUILD_DIR}" "${NPM_DIR}"
+    ;;
+
+    install)
+        # output
+        exec 1>>"${LOG_FILE}.out"
+        exec 2>>"${LOG_FILE}.err"
+
+        # directories
+        mkdir -p "${ASSETS_DIR}/fonts" "${ASSETS_DIR}/images" "${BUILD_DIR}/dev" "${BUILD_DIR}/prod"
+
+        # link assets to the build directories
+        for file in "assets" "src/index.html" "src/robots.txt" "src/scripts/includes"; do
+            ln -sf "${DIR}/${file}" "${BUILD_DIR}/dev"
+            ln -sf "${DIR}/${file}" "${BUILD_DIR}/prod"
+        done
+
+        # ruby gems
+        echo "Installing ruby gems..."
+        type ruby >/dev/null 2>&1 || brew install ruby
+        gem update --system
+        type sass >/dev/null 2>&1 || gem install sass
+        type compass >/dev/null 2>&1 || gem install compass
+        echo "${COLOR_GREEN}done!${COLOR_NONE}"
+
+        # node packages
+        echo "Installing npm packages..."
+        npm set progress=false
+        npm install && npm install
+        echo "${COLOR_GREEN}done!${COLOR_NONE}"
+    ;;
+
+    reinstall)
+        boilerplate clean
+        boilerplate install
+    ;;
+
+    start|stop|restart|status)
+        $1 ${*:2}
+    ;;
+
+    web)
+        "${DIR}/bin/${1}" ${*:2}
+    ;;
+
+    test)
+        for platform in $PLATFORMS; do
+            echo "Testing ${platform}..."
+            "${DIR}/bin/${platform}" test ${*:2}
+            echo
+        done;
+    ;;
+
+    build)
+        for platform in $PLATFORMS; do
+            echo "Building ${platform}..."
+            "${DIR}/bin/${platform}" stop
+            ENVIRONMENT=prod "${DIR}/bin/${platform}" build ${*:2}
+            echo
+        done;
+    ;;
+
+    deploy)
+        for platform in $PLATFORMS; do
+            echo "Deploying ${platform}..."
+            ENVIRONMENT=prod "${DIR}/bin/${platform}" deploy ${*:2}
+            echo
+        done;
+    ;;
+
+    *)
+        echo "Usage: $0 {clean|install|reinstall|start|stop|restart|status|test|build|deploy}"
+        exit 1
+    ;;
+esac
+popd >/dev/null

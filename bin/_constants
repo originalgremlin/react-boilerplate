@@ -1,0 +1,23 @@
+ENVIRONMENT=${ENVIRONMENT:-dev}
+
+# directories
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
+ASSETS_DIR="${DIR}/assets"
+BUILD_DIR="${DIR}/build"
+SRC_DIR="${DIR}/src"
+NPM_DIR="${DIR}/node_modules"
+BIN_DIR="${NPM_DIR}/.bin"
+CACHE_DIR="${DIR}/var/cache"
+PID_DIR="${DIR}/var/run"
+SSL_DIR="${DIR}/var/ssl"
+LOG_DIR="${DIR}/var/log"
+LOG_FILE="${LOG_DIR}/$( basename ${0} )_${1}"
+
+# output
+COLOR_RED=`tput setaf 1`
+COLOR_GREEN=`tput setaf 2`
+COLOR_YELLOW=$(tput setaf 3)
+COLOR_NONE=`tput sgr0`
+
+# ports
+HTTP_SERVER_PORT=8000

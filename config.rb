@@ -1,0 +1,1 @@
+sass_options = {:cache_location => "var/cache/sass"}

@@ -1,0 +1,93 @@
+info() {
+    echo "INFO: $1"
+}
+
+warn() {
+    echo "${COLOR_YELLOW}$1${COLOR_NONE}"
+}
+
+error() {
+    echo "${COLOR_RED}$1${COLOR_NONE}"
+}
+
+boilerplate() {
+    "${DIR}/bin/boilerplate" "${1}" "${*:2}"
+}
+
+get_pid() {
+    cat "${PID_DIR}/$1.pid"
+}
+
+is_running() {
+    [ -f "${PID_DIR}/$1.pid" ] && ps `get_pid $1` > /dev/null 2>&1
+}
+
+daemon() {
+    local cmd=$1
+    local err="${LOG_DIR}/${cmd}.err"
+    local out="${LOG_DIR}/${cmd}.out"
+    local pid="${PID_DIR}/${cmd}.pid"
+    echo -n "Starting ${cmd}..."
+    if is_running $cmd; then
+        echo "${COLOR_YELLOW}already running!${COLOR_NONE}"
+    else
+        ${*:2} >>"${out}" 2>>"${err}" &
+        echo $! >"${pid}"
+        echo "${COLOR_GREEN}started!${COLOR_NONE}"
+    fi
+}
+
+no_daemon() {
+    local cmd=$1
+    local err="${LOG_DIR}/${cmd}.err"
+    local out="${LOG_DIR}/${cmd}.out"
+    echo -n "Running ${cmd}..."
+    ${*:2} >>"${out}" 2>>"${err}"
+    echo "${COLOR_GREEN}done!${COLOR_NONE}"
+}
+
+start() {
+    for cmd in $@; do
+        $cmd
+    done;
+}
+
+stop() {
+    for cmd in $@; do
+        echo -n "Stopping $cmd..."
+        if is_running $cmd; then
+            kill `get_pid $cmd`
+            for i in {1..10}; do
+                if ! is_running $cmd; then
+                    break
+                fi
+                echo -n "."
+                sleep 1
+            done
+            if is_running $cmd; then
+                echo "${COLOR_RED}not stopped. It may still be shutting down or shutdown may have failed.${COLOR_NONE}"
+            else
+                echo "${COLOR_GREEN}stopped!${COLOR_NONE}"
+                rm -f "${PID_DIR}/$cmd.pid"
+            fi
+        else
+            echo "${COLOR_YELLOW}not running!${COLOR_NONE}"
+            rm -f "${PID_DIR}/$cmd.pid"
+        fi
+    done
+}
+
+restart() {
+    stop $@
+    start $@
+}
+
+status() {
+    for cmd in $@; do
+        if is_running $cmd; then
+            echo "${COLOR_GREEN}${cmd}${COLOR_NONE}"
+        else
+            echo "${COLOR_RED}${cmd}${COLOR_NONE}"
+        fi
+    done
+}
